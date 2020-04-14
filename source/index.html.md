@@ -1,15 +1,13 @@
 ---
-title: API Reference
+title: MapBlocks API Reference
 
 language_tabs: # must be one of https://git.io/vQNgJ
   - shell
-  - ruby
   - python
   - javascript
 
 toc_footers:
-  - <a href='#'>Sign Up for a Developer Key</a>
-  - <a href='https://github.com/slatedocs/slate'>Documentation Powered by Slate</a>
+  - <a href='https://mapblocks.ai/register'>Sign Up for a MapBlocks Account</a>
 
 includes:
   - errors
@@ -19,21 +17,91 @@ search: true
 
 # Introduction
 
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
+Welcome to the [MapBlocks](https://mapblocks.ai) API. This documentation will hopefully allow you to understand both the core objects and relationships in MapBlocks as well as how you can interact with the API.
 
-We have language bindings in Shell, Ruby, Python, and JavaScript! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
 
-This example API documentation page was created with [Slate](https://github.com/slatedocs/slate). Feel free to edit it and use it as a base for your own API's documentation.
+To setup your free account, head over here to [REGISTER](https://mapblocks.ai/register).
 
-# Authentication
+* Once you have your user account, you can start using our **browser-based IDE** immediately
+* If you want to interact directly with the **API**, you can request your [API KEY](https://mapblocks.ai/account/request_api) here
+
+We have documented language bindings for Shell, Python, and JavaScript! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
+<aside class="warning">TODO, code examples are not done, random/template Kittn API code is still included.</aside>
+
+
+# Git vs MapBlocks Overview
+
+One of the most useful, yet most **dangerous**, ways to understand the core of MapBlocks is to compare it to Git.  We say both "useful" and "dangerous" as it can provide a great entry-point for understanding, **BUT if you extend the analogy too far, you'll misconstrue the goals and powers of MapBlocks**.
+
+## Similarities
+
+* Primarily version control systems for code
+* Multiple users can read, write, and edit code in shared or independent versions
+* Ability to run, store, and access code either locally or remotely
+
+## Differences
+Git | MapBlocks
+--------- | -------
+Large projects with very long lifespans (complex software, full apps, etc)| Many independent, yet often related, projects. New projects are frequently 
+A "pyramid" shape of code and versions. "Everything merges to Master" (eventually)| Highly iterative development and reusability/portability of code between related and unrelated projects.
+Once a branch/commit has been merged, it is treated **primarily** as a "historical artifact" | Versions and Commits are treated as **evergreen** and can exist and be used simultaneously in the same project or across multiple projects.
+The **Attomic Unit** (code) and it's **Lifecycle** are effectively considered to be "part of", and are "stored within", the Git structure | **Code** and **Lifecycle** are independent of **Storage/Structure** , allowing for dynamic relationships and (controlled) simultaneous versioning and usage across the MapBlocks structure.
+
+## Rough Analogs
+
+You can roughly decompose both **Git** and **MapBlocks** into their **Primary Objects** and their **Versioning/Lifecycle** attributes.
+
+   | Git | MapBlocks
+--------- | ------- | -----------
+**Primary Objects** | `Repo`, `Folder`, `File`, `Line` | `Project`, (`SuperMap`), `Map`, `Block`, `Cell`, `Run`, `Parameter`, `Metric`
+**Versioning/Lifecycle** | `Branch`, (`Version`), `Commit` | `Version`, `Commit`
+
+
+### Primary Objects
+For **Primary Objects**, you can draw the following rough relationships
+
+Git | MapBlocks | Comments
+--------- | ------- | -----------
+`Repo` | `Project` | Both a `Repo` and `Project` function as a container to hold a collection of code to accomplish a purpose/goal.  The scope of the purpose/goal within MapBlocks is often smaller than Git.  
+`Folder` | (`SuperMap`) | Within MapBlocks, the idea of a `Folder` is accomplished using a `SuperMap` (a `Map` that has other `Maps` as children, see `Map` below)
+`File` | `Map` | Both `Files` and `Maps` function as "name spaced" **containers** for collections of code with related purposes.
+none | `Block` | MapBlocks incorporates `Blocks` as intermediate "code container" (smaller than a file). While a `File` is a collection of code with related functionality; a `Block` is a smaller collection of code, generally with a narrow and specific function.  
+`Line`| `Cell` | Both a `Line` and `Cell` are effectively the **atomic units** of code in their system and they are, in general, not expected to be fully functional on their own. Different than a `Line`, a `Cell` can be single or multi-line, and uniqueness / diffs are handled at the `Cell` level.  
+none | `Run` | Functions as linkage between a **holistic snapshot** (group of linked commits) as well as a **container** for inputs (`Parameters`) and outputs (`Metrics`) for a single, unique full execution of a `Map`
+none | `Parameter` | An **immutable** object to hold one specific input required for a `Run` of a `Map`
+none | `Metric` | TODO
+
+### Versions/Lifecycles
+For **Versions/Lifecycles**, you can draw the following rough relationships
+
+Git | MapBlocks | Comments
+--------- | ------- | -----------
+`Branch` | `Version` | In Git, a `Branch` is a "walled off" version of the **complete/full** `Repo` and, most often, its primary intent is to eventually "merge into master". In MapBlocks, a `Versions` can exist at multiple levels within the object hierarchy and only impact the scope of that hierarchy level.  MapBlock `Versions` do not have the implied goal of eventually "merging into master" (but that goal/effect can still be accomplished when needed).
+`(Version)` | `Version` | In Git, a version is
+`File` | `Map` | TODO
+`Line`| `Block` and `Cell` | TODO
+none | `Run` | TODO
+none | `Parameter` | TODO
+none | `Metric` | TODO
+
+# MapBlocks Data Structure
+
+MapBlocks utilizes [Graph] (https://en.wikipedia.org/wiki/Graph_(abstract_data_type)) structure to model all its data.  As a graph, it consists of **Nodes** and **Relationships**.  
+
+A few notes on our specific graph implementation:
+
+* Both **Nodes** and **Relationships** have **Labels** (types), and in MapBlocks a **single** Node instance can exist while having multiple (however Relationships only carry one specific Label)
+* **Nodes** and **Relationship** have properties that store all their attributes.  Only a few **Relationships** in MapBlocks carry any properties (primarily an `index` property to allow for keeping the sort order of children nodes where applicable).
+
+
+# Nodes and Relationships
+
+Up next
+
+# API: Authentication
 
 > To authorize, use this code:
 
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
 
 ```python
 import kittn
@@ -236,4 +304,3 @@ This endpoint deletes a specific kitten.
 Parameter | Description
 --------- | -----------
 ID | The ID of the kitten to delete
-
