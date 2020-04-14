@@ -42,7 +42,7 @@ One of the most useful, yet most **dangerous**, ways to understand the core of M
 ## Differences
 Git | MapBlocks
 --------- | -------
-Large projects with very long lifespans (complex software, full apps, etc)| Many independent, yet often related, projects. New projects are frequently 
+Large, "walled off" projects with very long lifespans (complex software, full apps, etc)| Many independent, yet often related, projects. New projects are frequently created/completed and code/versions are often shared between multiple projects.
 A "pyramid" shape of code and versions. "Everything merges to Master" (eventually)| Highly iterative development and reusability/portability of code between related and unrelated projects.
 Once a branch/commit has been merged, it is treated **primarily** as a "historical artifact" | Versions and Commits are treated as **evergreen** and can exist and be used simultaneously in the same project or across multiple projects.
 The **Attomic Unit** (code) and it's **Lifecycle** are effectively considered to be "part of", and are "stored within", the Git structure | **Code** and **Lifecycle** are independent of **Storage/Structure** , allowing for dynamic relationships and (controlled) simultaneous versioning and usage across the MapBlocks structure.
@@ -62,14 +62,14 @@ For **Primary Objects**, you can draw the following rough relationships
 
 Git | MapBlocks | Comments
 --------- | ------- | -----------
-`Repo` | `Project` | Both a `Repo` and `Project` function as a container to hold a collection of code to accomplish a purpose/goal.  The scope of the purpose/goal within MapBlocks is often smaller than Git.  
+`Repo` | `Project` | Both a `Repo` and `Project` function as a container to hold a collection of code to accomplish a broader purpose/goal.  The scope of the purpose/goal within MapBlocks is often smaller than Git.  
 `Folder` | (`SuperMap`) | Within MapBlocks, the idea of a `Folder` is accomplished using a `SuperMap` (a `Map` that has other `Maps` as children, see `Map` below)
 `File` | `Map` | Both `Files` and `Maps` function as "name spaced" **containers** for collections of code with related purposes.
 none | `Block` | MapBlocks incorporates `Blocks` as intermediate "code container" (smaller than a file). While a `File` is a collection of code with related functionality; a `Block` is a smaller collection of code, generally with a narrow and specific function.  
 `Line`| `Cell` | Both a `Line` and `Cell` are effectively the **atomic units** of code in their system and they are, in general, not expected to be fully functional on their own. Different than a `Line`, a `Cell` can be single or multi-line, and uniqueness / diffs are handled at the `Cell` level.  
 none | `Run` | Functions as linkage between a **holistic snapshot** (group of linked commits) as well as a **container** for inputs (`Parameters`) and outputs (`Metrics`) for a single, unique full execution of a `Map`
 none | `Parameter` | An **immutable** object to hold one specific input required for a `Run` of a `Map`
-none | `Metric` | TODO
+none | `Metric` | In MapBlocks, an array of `time_step`:`value` pairs for a specific measurement/output associated with a `Run`.  
 
 ### Versions/Lifecycles
 For **Versions/Lifecycles**, you can draw the following rough relationships
@@ -77,27 +77,186 @@ For **Versions/Lifecycles**, you can draw the following rough relationships
 Git | MapBlocks | Comments
 --------- | ------- | -----------
 `Branch` | `Version` | In Git, a `Branch` is a "walled off" version of the **complete/full** `Repo` and, most often, its primary intent is to eventually "merge into master". In MapBlocks, a `Versions` can exist at multiple levels within the object hierarchy and only impact the scope of that hierarchy level.  MapBlock `Versions` do not have the implied goal of eventually "merging into master" (but that goal/effect can still be accomplished when needed).
-`(Version)` | `Version` | In Git, a version is
-`File` | `Map` | TODO
-`Line`| `Block` and `Cell` | TODO
-none | `Run` | TODO
-none | `Parameter` | TODO
-none | `Metric` | TODO
+`(Version)` | `Version` | In MapBlocks, a `Version` is a full-fledged Class with it's own unique properties/functions and it has parents/children/other relationships. In Git, a version is more akin to a simple label/tag assigned to a commit.
+`Commit` | `Commit` | In both Git and MapBlocks, a `Commit` functions as a "snapshot" of a scope of code. The general "scope" in Git is an entire `Repo`, while in MapBlocks the "scope" is only for the specific `Object`/`Lifecycle` the `commit` is associated with.
 
-# MapBlocks Data Structure
+# Data Structure Overview
 
 MapBlocks utilizes [Graph] (https://en.wikipedia.org/wiki/Graph_(abstract_data_type)) structure to model all its data.  As a graph, it consists of **Nodes** and **Relationships**.  
 
 A few notes on our specific graph implementation:
 
-* Both **Nodes** and **Relationships** have **Labels** (types), and in MapBlocks a **single** Node instance can exist while having multiple (however Relationships only carry one specific Label)
+* All **Nodes** and **Relationships** have at least one **Label** (type)
+* A **single Node** instance can have multiple/simultaneous labels, however **Relationships** only carry one specific Label
 * **Nodes** and **Relationship** have properties that store all their attributes.  Only a few **Relationships** in MapBlocks carry any properties (primarily an `index` property to allow for keeping the sort order of children nodes where applicable).
 
 
-# Nodes and Relationships
+# Nodes
 
-Up next
+## BaseNode SuperClass
+All nodes in MapBlocks inherit from the `BaseNode` class.
 
+**`BaseNode(Node)`**
+
+Property | Default | Description
+--------- | ------- | -----------
+uid | *auto_gen* | 32 character unique identifier
+createdAt | *auto_gen* | DateTimeStamp of when the Node was created
+lastUpdated | *auto_gen* | DateTimeStamp assigned on creation and on subsequent edits
+
+## Dual Core and Lifecycle Nodes
+
+<aside class="success">
+<b>KEY CONCEPT:</b> Dual Inheritance of Core and Lifecycle Node Properties and Functions
+</aside>
+There are **3 Core** node types (Graph labels):  `Project`, `Map`, and `Block`. These Core Nodes co-exist with **3 Lifecycle** node types (also Graph labels): `Origin`, `Version`, and `Commit`. Every node of these types exist as **both** a **Core** type and a **Lifecycle** type.  An actual instance of these combined nodes (e.g. a `MapVersion`) will inherit the properties and functionalities from the both it's **Core** and **Lifecycle** class.
+
+## Lifecycle Node Types
+<aside class="success">
+<b>KEY CONCEPT:</b> Lifecycle Progression
+</aside>
+1. From a **lifecycle** perspective:
+  * `Origins` have `Versions` as children
+  * `Versions` have `Commits` as children
+2. When a **new** `Project`, `Map`, or `Block` is created from a blank slate, it starts as an `ProjectOrigin`, `MapOrigin`, or `BlockOrigin`. **However** from a nomenclature perspective, it is simply referred to as a `Project`, `Map` or `Block`. When initiated, an `Origin` instance automatically gets a `Version` (**v1**) lifecycle instance created and linked to the `Origin` instance.
+3. All subsequent `Version` instances are created as children of the `Origin`.  From a nomenclature / interaction perspective, they are primarily handled using their **Lifecycle** label and the **Core** node type is inferred based on the parent. For example:
+  * A `Map` (which is actually a `MapOrigin`) has the property `Map.versions`
+  * `Map.Versions` is most often said to be an array of `Versions`, while it is more accurately an array of `MapVersions` (each having the properties of a `Map` and `Version`)
+
+### Origin Nodes
+
+**`Origin(BaseNode)`**
+
+Property | Default | Description
+--------- | ------- | -----------
+lifecycle | "origin" | a static property to ensure tracking of **lifecycle** nodes across their multiple **core** node instances
+last_child_num | *1*, *auto_gen* | Interger associated with the latest `Version.number` child created
+versions | *relationships* | An array of `Version` children, ordered by thier `Version.number` ascending. Generated via one-to-many `HAS_VERSION` relationships between itself and `Version` nodes.
+owner | *relationship* | A backlink `OWNS` relationship from the `User` who created the `Origin` node
+
+### Version Nodes
+
+**`Version(BaseNode)`**
+
+Property | Default | Description
+--------- | ------- | -----------
+lifecycle | "version" | a static property to ensure tracking of **lifecycle** nodes across their multiple **core** node instances
+number | *auto_gen* | the sequentially incremented sequence number that this specific `Version` is of it's parent `Origin`
+last_child_num | *1*, *auto_gen* | Interger associated with the latest `Commit.number` child created
+commits | *relationships* | An array of `Commit` children, ordered by thier `Commit.number` ascending. Generated via one-to-many `HAS_COMMIT` relationships between itself and `Commit` nodes.
+owner | *relationship* | Directly inherited from it's parent `Origin` node
+
+
+### Commit Nodes
+
+**`Commit(BaseNode)`**
+
+Property | Default | Description
+--------- | ------- | -----------
+message | "New Commit" | The **user submitted** commit message when saving a `Commit`
+lifecycle | "commit" | a static property to ensure tracking of **lifecycle** nodes across their multiple **core** node instances
+number | *auto_gen* | the sequentially incremented sequence number that this specific `Commit` is of it's parent `Version`
+owner | *relationship* | Directly inherited from it's parent `Origin` node
+<aside class="warning"><b>"Special Case Dual Nodes"</b>: See <b>Map</b> and <b>Block</b> for details of specific attributes unique to dual <b>MapCommit</b> and <b>BlockCommit</b> node instances</aside>
+
+
+
+
+## CoreNodes (SuperClass and Children)
+
+All **Core** node types inherit from the **`CoreNode`** class
+
+### CoreNode Super Class
+
+**`CoreNode(BaseNode)`**
+
+Property | Default | Description
+--------- | ------- | -----------
+name | *required* | **User submitted** name. Must be unique for the **Core** node type for that **User**
+description | *required* | **User submitted** description
+notes | *optional* | A free-form text field that a user can use as a sub-title/sub-description/etc
+todos | *optional* | An **array** of text strings that the user can add-to, edit, and delete-from.
+public | *True* | A **boolean** flag defining if other MapBlock users can find and **read** the contents of this node.
+ <aside class="warning"><b>"TODO"</b>: Define the Inheritance of <b>PUBLIC</b></aside>
+
+### Project Node
+
+**`Project(CoreNode)`**
+
+ Property | Default | Description
+ --------- | ------- | -----------
+ core_type | "project" | A system assigned flag to aid in differentiation between **Core** types within **Lifecycle** nodes.
+ maps | *relationships* | One-to-many `HAS_MAP` relationships linking the `Project` to `MapVersions`
+ blocks | *relationships* | One-to-many `HAS_MAP` relationships linking the `Project` to `BlockVersions`
+
+ <aside class="success">
+ <b>KEY CONCEPT:</b> Notice that <b>Projects</b> are linked at the <b>Version</b> lifecycle stage (MapVersions and BlockVersions) as opposed to the <b>Origin</b> lifecycle stage (MapOrigins and BlockOrigins). <b>Maps/Blocks</b> at the <b>Origin</b> stage exist independent of a <b>Projects</b>.  
+ </aside>
+
+
+### Map Node
+
+**`Map(CoreNode)`**
+
+ Property | Default | Description
+ --------- | ------- | -----------
+ core_type | "map" | A system assigned flag to aid in differentiation between **Core** types within **Lifecycle** nodes.
+ **MapCommit** | **--** | Below properties are **Only for MapCommits**  
+ *blocks* | *relationships* | An ordered array of `BlockCommits` that are included in the `MapCommit`
+ *runs* | *relationships* | An ordered array of `Runs` that have been executed using that `MapCommit`
+
+
+### Block Node
+
+**`Block(CoreNode)`**
+
+ Property | Default | Description
+ --------- | ------- | -----------
+ core_type | "block" | A system assigned flag to aid in differentiation between **Core** types within **Lifecycle** nodes.
+ **BlockCommit** | **--** | Below properties are **Only for BlockCommits**  
+ *cells* | *relationships* | An ordered array of `Cells` that are included in the `BlockCommit`
+
+
+## Supporting Nodes
+
+### Cell Node
+
+**`Cell(BaseNode)`**
+
+ Property | Default | Description
+ --------- | ------- | -----------
+ cell_type | "code" | `string` identifier of either "code", "markdown", or "header"
+ content | *required* | A `string` containing the user inputted contents in that `Cell`
+ stdOut | `[]` | An array of strings.  Stores, in order, the system prints generated by `Cells` execution over time.
+ lifecycle | "commit" | Cells are always considered to be at the a quasi `Commit` lifecycle object
+ core_type | "cell" | A system assigned flag to aid in differentiation
+
+
+### User Node
+
+**`User(BaseNode)`**
+
+  Property | Default | Description
+  --------- | ------- | -----------
+  userName | *required* | Unique nickname submitted by the user during account creation
+  firstName | *required* | Submitted by the user during account creation
+  lastName | *required* | Submitted by the user during account creation
+  email | *required* | Submitted by the user during account creation
+  *{Password}* | *required*, **NO ACCESS** | Hashed and salted password string, not exposed externally
+  admin | False | `Boolean` flag providing Admin rights to the MapBlocks server instance
+  ownsMaps | *relationships* | An array of `MapOrigins` linked to the user with `OWNS` relationships
+  hasMaps | *relationships* | An array of `MapOrigins` linked to the user with `HAS` relationships
+  ownsBlocks | *relationships* | An array of `BlockOrigins` linked to the user with `OWNS` relationships
+  hasBlocks | *relationships* | An array of `BlockOrigins` linked to the user with `HAS` relationships
+  ownsProject | *relationships* | An array of `Projects` linked to the user with `OWNS` relationships
+  hasProjects | *relationships* | An array of `Projects` linked to the user with `HAS` relationships
+
+
+# Relationships
+
+TODO
+
+<aside class="warning"><b>STOP HERE</b> Everything below here is the template default still</aside>
 # API: Authentication
 
 > To authorize, use this code:
