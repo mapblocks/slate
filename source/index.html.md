@@ -88,7 +88,7 @@ A few notes on our specific graph implementation:
 
 * All **Nodes** and **Relationships** have at least one **Label** (type)
 * A **single Node** instance can have multiple/simultaneous labels, however **Relationships** only carry one specific Label
-* **Nodes** and **Relationship** have properties that store all their attributes.  Only a few **Relationships** in MapBlocks carry any properties (primarily an `index` property to allow for keeping the sort order of children nodes where applicable).
+* Both **Nodes** and **Relationship** have properties that store all their attributes.
 
 
 # Nodes
