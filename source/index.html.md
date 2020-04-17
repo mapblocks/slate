@@ -132,7 +132,7 @@ Property | Default | Description
 lifecycle | "origin" | a static property to ensure tracking of **lifecycle** nodes across their multiple **core** node instances
 last_child_num | *1*, *auto_gen* | Interger associated with the latest `Version.number` child created
 versions | *relationships* | An array of `Version` children, ordered by thier `Version.number` ascending. Generated via one-to-many `HAS_VERSION` relationships between itself and `Version` nodes.
-owner | *relationship* | A backlink `OWNS` relationship from the `User` who created the `Origin` node
+owner | *relationship* | A backlink `OWNS` relationship (*OwnerRel*) from the `User` who created the `Origin` node
 
 ### Version Nodes
 
@@ -186,8 +186,9 @@ public | *True* | A **boolean** flag defining if other MapBlock users can find a
  Property | Default | Description
  --------- | ------- | -----------
  core_type | "project" | A system assigned flag to aid in differentiation between **Core** types within **Lifecycle** nodes.
- maps | *relationships* | One-to-many `HAS_MAP` relationships linking the `Project` to `MapVersions`
- blocks | *relationships* | One-to-many `HAS_MAP` relationships linking the `Project` to `BlockVersions`
+ maps | *relationships* | One-to-many `HAS_MAP` relationships linking the `Project` to `MapVersions`, linked with `HAS` relationships (*HasRel*)
+ blocks | *relationships* | One-to-many `HAS_BLOCK` relationships linking the `Project` to `BlockVersions`, linked with `HAS` relationships (*HasRel*)
+ users | *relationships* | One-to-many `HAS_USER` relationships (*PermissionRel*) linking the `Project` to `Users` with each relationship having it's own controllable permissions.
 
  <aside class="success">
  <b>KEY CONCEPT:</b> Notice that <b>Projects</b> are linked at the <b>Version</b> lifecycle stage (MapVersions and BlockVersions) as opposed to the <b>Origin</b> lifecycle stage (MapOrigins and BlockOrigins). <b>Maps/Blocks</b> at the <b>Origin</b> stage exist independent of a <b>Projects</b>.  
@@ -202,8 +203,8 @@ public | *True* | A **boolean** flag defining if other MapBlock users can find a
  --------- | ------- | -----------
  core_type | "map" | A system assigned flag to aid in differentiation between **Core** types within **Lifecycle** nodes.
  **MapCommit** | **--** | Below properties are **Only for MapCommits**  
- *blocks* | *relationships* | An ordered array of `BlockCommits` that are included in the `MapCommit`
- *runs* | *relationships* | An ordered array of `Runs` that have been executed using that `MapCommit`
+ *blocks* | *relationships* | An ordered array of `BlockCommits` that are included in the `MapCommit`, linked with `HAS` relationships (*OrderedHasRel*)
+ *runs* | *relationships* | An ordered array of `Runs` that have been executed using that `MapCommit`, linked with `HAS` relationships (*OrderedHasRel*)
 
 
 ### Block Node
@@ -214,7 +215,7 @@ public | *True* | A **boolean** flag defining if other MapBlock users can find a
  --------- | ------- | -----------
  core_type | "block" | A system assigned flag to aid in differentiation between **Core** types within **Lifecycle** nodes.
  **BlockCommit** | **--** | Below properties are **Only for BlockCommits**  
- *cells* | *relationships* | An ordered array of `Cells` that are included in the `BlockCommit`
+ *cells* | *relationships* | An ordered array of `Cells` that are included in the `BlockCommit`, linked with `HAS` relationships (*OrderedHasRel*)
 
 
 ## Supporting Nodes
@@ -244,17 +245,93 @@ public | *True* | A **boolean** flag defining if other MapBlock users can find a
   email | *required* | Submitted by the user during account creation
   *{Password}* | *required*, **NO ACCESS** | Hashed and salted password string, not exposed externally
   admin | False | `Boolean` flag providing Admin rights to the MapBlocks server instance
-  ownsMaps | *relationships* | An array of `MapOrigins` linked to the user with `OWNS` relationships
-  hasMaps | *relationships* | An array of `MapOrigins` linked to the user with `HAS` relationships
-  ownsBlocks | *relationships* | An array of `BlockOrigins` linked to the user with `OWNS` relationships
-  hasBlocks | *relationships* | An array of `BlockOrigins` linked to the user with `HAS` relationships
-  ownsProject | *relationships* | An array of `Projects` linked to the user with `OWNS` relationships
-  hasProjects | *relationships* | An array of `Projects` linked to the user with `HAS` relationships
+
+  ownsMaps | *relationships* | An array of `MapOrigins` linked to the user with `OWNS` relationships (*OwnerRel*)
+  ownsBlocks | *relationships* | An array of `BlockOrigins` linked to the user with `OWNS` relationships (*OwnerRel*)
+
+  ownsProject | *relationships* | An array of `Projects` linked **from** the user with `OWNS` relationships (*OwnerRel*)
+  hasProjects | *relationships* | An array of `Projects` **back-linked** to the user with `HAS_USER` relationships (*PermissionRel*)
 
 
 # Relationships
 
-TODO
+As mentioned above, MapBlocks utilizes directed relationships in its Graph structure.  This means each relationship has a **Start Node** (you could say "from" or "parent") and an **End Node** ("to" or "child").  Theoretically, in a directed graph, if a relationship exists "both ways", then it is modeled with 2 relationships, one in each direction.  
+
+## Relationship Classes
+
+MapBlocks uses two primary **Relationship Classes**, each with one additional sub-class:
+
+- **HasRel(Relationship)**
+  - Subclass **OrderedHasRel(HasRel)** simply adds an index property to handle ordering of children
+- **PermissionRel(Relationship)**
+  - Subclass **OwnerRel(PermissionRel)** simply sets all permissions to TRUE by default
+
+These **Relationship Classes** are utilized to model the above documented *relationships* in **Nodes**. Each **Node** definition above details which **Relationship Class** it uses.
+
+
+### HAS Relationship
+
+**`HasRel(Relationship)`**`
+
+Property | Default | Description
+--------- | ------- | -----------
+uid | *auto_gen* | 32 character unique identifier
+createdAt | *auto_gen* | DateTimeStamp of when the Relationship was created
+
+
+### ORDERED HAS Relationship (SubClass of HasRel)
+
+**`HasRel(HasRel)`**`
+
+Property | Default | Description
+--------- | ------- | -----------
+idx | *auto_gen* | an index **integer** that stores the order of linked children nodes
+
+
+### PERMISSIONS Relationship
+
+**`PermissionRel(Relationship)`**`
+
+Property | Default | Description
+--------- | ------- | -----------
+uid | *auto_gen* | 32 character unique identifier
+createdAt | *auto_gen* | DateTimeStamp of when the Relationship was created
+
+
+### OWNER Relationship (SubClass of PermissionsRel)
+
+**`OwnerRel(PermissionRel)`**`
+
+Property | Default | Description
+--------- | ------- | -----------
+idx | *auto_gen* | an index **integer** that stores the order of linked children nodes
+
+
+
+## Owners and Participants
+
+At the `Origin` lifecycle level (the highest parent), which includes dual class `Maps`, `Blocks`,  `Projects`, only one user (the **Owner**) has access to the Node via a `OWNS` **Relationship**.  All other users  gain access and permissions at the `Version` level via a `Project` node. The `HAS_USER` relationship (direct from the `Project` to the other `Users`), and the specific permissions granted for each user is initially created by the `Project` **Owner** (depending on the permissions granted, the assigned user may then be able to invite other users, change permissions, etc).
+
+**EXAMPLE:**
+
+**2 `Users`** (one owner, one participant), **1 `Map`** that has **2 `Versions`**, and **1 `Project`** (one owner, one participant )
+
+- **Owner Relationships**
+  - *`Jim (User)`* **- `OWNS (PermissionRel: all permissions)` ->** *`Foo (Map)`*
+  - *`FirstMap (Map)`* **- `HAS_VERSION (OrderedRel)` ->** *`Foo V1 (MapVersion)`*
+  - *`FirstMap (Map)`* **- `HAS_VERSION (OrderedRel)` ->** *`Foo V2 (MapVersion)`*
+  - *`Jim (User)`* **- `OWNS (PermissionRel: all permissions)` ->** *`OurProject (Project)`*
+
+- **Project Relationships**
+  - *`OurProject (Project)`* **- `HAS_MAP (OrderedRel)` ->** *`Foo V1 (MapVersion)`*
+  - *`OurProject (Project)`* **- `HAS_USER (PermissionRel: editable)` ->** *`Bill (User)`*
+- **Implications For Bill (participant)**
+  - Has access to **Foo V1** (`MapVersion`) based on the `Project` - `HAS_USER` -> `User` relationship.  His specific **permissions** will have been defined by **Jim** (owner) when Jim created the `HAS_USER` relationship.
+  - Will inherently know an `Origin` level of **Foo** (`Map`) exists, but he will have no access at that level
+  - Will not be provided with any knowledge of, nor access to, the other **Foo V2** (`MapVersion`)
+  - Bill's **permissions**, set by the **owner** Jim, for **OurProject** will **cascade down** to all of the `Versions`, `Commits`, `Cells`, etc that are linked to the `Project`
+
+
 
 <aside class="warning"><b>STOP HERE</b> Everything below here is the template default still</aside>
 # API: Authentication
