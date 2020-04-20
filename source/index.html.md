@@ -2,6 +2,7 @@
 title: MapBlocks API Reference
 
 language_tabs: # must be one of https://git.io/vQNgJ
+  - json
   - shell
   - python
   - javascript
@@ -333,41 +334,172 @@ At the `Origin` lifecycle level (the highest parent), which includes dual class 
 
 
 
-<aside class="warning"><b>STOP HERE</b> Everything below here is the template default still</aside>
-# API: Authentication
+
+# API
+
+## Authentication
 
 > To authorize, use this code:
 
 
 ```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
+TBD
 ```
 
 ```shell
-# With shell, you can just pass the correct header with each request
-curl "api_endpoint_here"
-  -H "Authorization: meowmeowmeow"
+TBD
 ```
 
 ```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
+TBD
 ```
 
-> Make sure to replace `meowmeowmeow` with your API key.
+> Make sure to replace `YourApiKey` with your specific API key.
 
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
+MapBlocks uses API keys to allow access to the API.
 
-Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
+**HOSTED SOLUTION**
 
-`Authorization: meowmeowmeow`
+If you are using MapBlocks Hosted Solutions, your API Key will be specific to your user account (and grant you access to all of your personal private data as well as all public data).  You can request a new MapBlocks API key [HERE] (https://mapblocks.ai/account/request_api).
 
-<aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
-</aside>
+All requests to MapBlocks endpoints will need to include your **API KEY** in the **HEADER** that looks like the following:
+
+`Authorization: YourApiKey`
+
+
+**SELF HOSTED**
+
+TBD
+
+
+## Default GET Query Parameters
+
+
+All `GET` endpoints have the following query parameters:
+
+Parameter | Default | Description
+--------- | ------- | -----------
+limit | 20 | The maximum amount of results sent in a response per request
+offset | 20 | The offset value based on the default (or query specified) sort order
+public | false | Whether to include  public objects that are unlinked to the authenticated users
+<filters> | TBD |  Filter and Sort parameters will be added soon
+
+
+
+
+## GET Origins | Maps | Blocks | Projects
+
+
+> The Origins GET endpoints return JSON structured like this:
+
+```json
+{
+  "object": "list",
+  "data":
+    [
+      {
+      "uid": "420ff1ca26b24dff9a4734486cc7fb89",
+      "createdAt": "2020-04-14 19:40:20.828163+00:00",
+      "lastUpdated": "2020-04-14 19:40:23.358086+00:00",
+      "name": "Direct Block1",
+      "description": "1st PARENT Block for Direct Project",
+      "notes": null,
+      "todos": null,
+      "public": true,
+      "last_child_num": 2,
+      "id": 23
+      },
+      {"... next ": "...Origin"},
+    ],
+  "limit": 20,
+  "offset": 0,
+  "total": 123
+}
+```
+
+These endpoints returns a list of **Origin** objects that are available to the authenticated user.
+
+`GET /origins/`
+
+`GET /maps/`
+
+`GET /blocks/`
+
+`GET /projects/`
+
+Parameter | Default | Description
+--------- | ------- | -----------
+`<default>` | `<default>` | See Default GET Query Parameters
+`<specific>` | TBD |  No endpoint specific parameters at this time
+
+
+## POST Origins | Maps | Blocks | Projects
+
+> The Origins POST endpoints expect a JSON payload structured like this:
+
+```json
+
+{
+"name": "Direct Block1",
+"description": "1st PARENT Block for Direct Project",
+"notes": "Remember to to fix Foo and add Bar",
+"todos": ["Fix Foo", "Add Bar function"]
+}
+```
+> The POST RESPONSE is a full JSON representation of the created Origin node instance
+
+These endpoints create a new **Origin** node with the **CoreNode** type of the endpoint.
+
+`POST /maps/`
+
+`POST /blocks/`
+
+`POST /projects/`
+
+*Note: POST requests are not supported on the ambiguous, lifecycle `/origins` endpoint*
+
+
+## GET Specific Origin | Map | Block | Project
+
+
+> The GET `Origins/<UID>` endpoints return JSON structured like this:
+
+```json
+{
+  "object": "instance",
+  "data":
+  {
+    "uid": "420ff1ca26b24dff9a4734486cc7fb89",
+    "createdAt": "2020-04-14 19:40:20.828163+00:00",
+    "lastUpdated": "2020-04-14 19:40:23.358086+00:00",
+    "name": "Direct Block1",
+    "description": "1st PARENT Block for Direct Project",
+    "notes": null,
+    "todos": null,
+    "public": true,
+    "last_child_num": 2,
+    "id": 23
+  }
+}
+```
+
+These endpoints returns a list of **Origin** objects that are available to the authenticated user.
+
+`GET /origins/`
+
+`GET /maps/`
+
+`GET /blocks/`
+
+`GET /projects/`
+
+Parameter | Default | Description
+--------- | ------- | -----------
+`<default>` | `<default>` | See Default GET Query Parameters
+`<specific>` | TBD |  No endpoint specific parameters at this time
+
+
+<aside class="warning"><b>STOP HERE</b> Everything below here is the still template examples </aside>
 
 # Kittens
 
